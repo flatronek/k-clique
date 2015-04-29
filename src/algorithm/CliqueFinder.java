@@ -1,10 +1,11 @@
 package algorithm;
 
+import java.util.LinkedList;
+
 import graph.*;
 
 public class CliqueFinder {
-	private Graph graph;
-	private Clique clique;
+	
 	
 	private static CliqueFinder cf = null;
 	
@@ -25,8 +26,7 @@ public class CliqueFinder {
 			}
 		}
 		
-		cf.setGraph(graph);
-		result = cf.findClique();
+		result = cf.findClique(new Graph(graph));
 		
 		for(Vertex v: result.getVertexes()){
 			System.out.print("\nVertex no: " + v.getIndex() + "\n" + 
@@ -37,24 +37,23 @@ public class CliqueFinder {
 	}
 	
 	private CliqueFinder(){
-		graph = null;
-		clique = null;
+		
 	}
 	
-	public Clique findClique(){
+	public Clique findClique(Graph graph){
 		if( graph == null )
 			return null;
 		
-		initClique();
+		Clique clique = new Clique();
+		initClique(clique, graph);
 			
 		return clique;
 	}
 	
-	private void initClique() {
+	private void initClique(Clique clique, Graph graph) {
 		int [][] adjMatrix;
 		int verticesNumber;
-		
-		clique = new Clique();
+	
 		adjMatrix = graph.getAdjMatrix();
 		verticesNumber = adjMatrix.length;
 			
@@ -67,23 +66,35 @@ public class CliqueFinder {
 					v.addEdge(new Edge(vIndex, toIndex));
 			//		System.out.println("Added edge: " + vIndex + " " + toIndex);
 				}
-			}
-			
+			}	
 			clique.addVertex(v);
 		//	System.out.println("Vertex: " + v.getIndex() + " degree is: " + v.getDegree());
 		}
 		
 	}
-
-	public void setGraph(Graph graph){
-		this.graph = graph;
-	}
 	
-	public void setGraph(int tab[][]){
-		graph = new Graph(tab);
-	}
-	
-	public void initGraphFromFile(String path){
-		graph = new Graph(path);
+	private LinkedList<Vertex> getSmallestDegreeVertexes(Clique clique){
+		LinkedList<Vertex> result = new LinkedList<Vertex>();
+		LinkedList<Vertex> input = clique.getVertexes();
+		
+		int theSmallest = 100;
+		int secondSmallest = 100;
+		
+		for(Vertex v: input){
+			if( v.getDegree() < theSmallest ){
+				theSmallest = v.getDegree();
+				continue;
+			}
+			
+			if( v.getDegree() < secondSmallest )
+				secondSmallest = v.getDegree();
+		}
+		
+		for(Vertex v: input){
+			if( (v.getDegree() == theSmallest) || (v.getDegree() == secondSmallest) )
+				result.add(v);
+		}
+		
+		return result;
 	}
 }
