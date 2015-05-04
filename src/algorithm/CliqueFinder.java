@@ -1,6 +1,7 @@
 package algorithm;
 
 import java.util.LinkedList;
+import java.util.Random;
 
 import graph.*;
 
@@ -44,35 +45,31 @@ public class CliqueFinder {
 		if( graph == null )
 			return null;
 		
-		Clique clique = new Clique();
-		initClique(clique, graph);
+		Clique clique = new Clique(graph);
+		
+		while( !clique.isClique() )
+			removeRandom(clique, getSmallestDegreeVertexes(clique));
 			
 		return clique;
 	}
 	
-	private void initClique(Clique clique, Graph graph) {
-		int [][] adjMatrix;
-		int verticesNumber;
 	
-		adjMatrix = graph.getAdjMatrix();
-		verticesNumber = adjMatrix.length;
-			
-		for(int vIndex = 0; vIndex<verticesNumber; vIndex++){
-			int tab[] = adjMatrix[vIndex];
-			Vertex v = new Vertex(vIndex);
-			
-			for(int toIndex = 0; toIndex<tab.length; toIndex++){
-				if( (tab[toIndex] == 1) && ( vIndex != toIndex ) ){
-					v.addEdge(new Edge(vIndex, toIndex));
-			//		System.out.println("Added edge: " + vIndex + " " + toIndex);
-				}
-			}	
-			clique.addVertex(v);
-		//	System.out.println("Vertex: " + v.getIndex() + " degree is: " + v.getDegree());
-		}
+	
+	private void removeRandom(Clique clique,
+			LinkedList<Vertex> smallestDegreeVertexes) {
+
+		Random rand;
+		Vertex v;
+		int index;
 		
+		rand = new Random();
+		index = rand.nextInt(smallestDegreeVertexes.size());
+		v = smallestDegreeVertexes.get(index);
+		System.out.println("Removed: " + v.getIndex());
+		
+		clique.removeVertex(v);
 	}
-	
+
 	private LinkedList<Vertex> getSmallestDegreeVertexes(Clique clique){
 		LinkedList<Vertex> result = new LinkedList<Vertex>();
 		LinkedList<Vertex> input = clique.getVertexes();
@@ -97,4 +94,27 @@ public class CliqueFinder {
 		
 		return result;
 	}
+	
+/*	private void initClique(Clique clique, Graph graph) {
+		int [][] adjMatrix;
+		int verticesNumber;
+	
+		adjMatrix = graph.getAdjMatrix();
+		verticesNumber = adjMatrix.length;
+			
+		for(int vIndex = 0; vIndex<verticesNumber; vIndex++){
+			int tab[] = adjMatrix[vIndex];
+			Vertex v = new Vertex(vIndex);
+			
+			for(int toIndex = 0; toIndex<tab.length; toIndex++){
+				if( (tab[toIndex] == 1) && ( vIndex != toIndex ) ){
+					v.addEdge(new Edge(vIndex, toIndex));
+			//		System.out.println("Added edge: " + vIndex + " " + toIndex);
+				}
+			}	
+			clique.addVertex(v);
+		//	System.out.println("Vertex: " + v.getIndex() + " degree is: " + v.getDegree());
+		}
+		
+	} */
 }

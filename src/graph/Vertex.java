@@ -41,4 +41,15 @@ public class Vertex {
 		this.index = index;
 	}
 	
+	public void removeEdgeToIndex(int index){
+		Edge rem = null;
+		for(Edge e: edges){
+			if( e.getToIndex() == index )
+				rem = e;
+		}
+		edges.remove(rem);
+		
+		setDegree();
+	}
+	
 }
