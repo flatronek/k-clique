@@ -3,7 +3,7 @@ package graph;
 import java.util.LinkedList;
 
 
-public class Vertex {
+public class Vertex implements Comparable<Vertex> {
 	
 	private int index;
 	private int degree;
@@ -18,6 +18,11 @@ public class Vertex {
 	
 	public void addEdge(Edge e){
 		edges.add(e);
+		setDegree();
+	}
+	
+	public void setEdges(LinkedList<Edge> edges){
+		this.edges = edges;
 		setDegree();
 	}
 	
@@ -50,6 +55,17 @@ public class Vertex {
 		edges.remove(rem);
 		
 		setDegree();
+	}
+
+	@Override
+	public int compareTo(Vertex arg0) {
+		
+		if (this.index > arg0.getIndex())
+			return 1;
+		if (this.index < arg0.getIndex())
+			return -1;
+		
+		return 0;
 	}
 	
 }

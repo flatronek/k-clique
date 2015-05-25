@@ -1,20 +1,23 @@
 package graph;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
-public class Clique {
+public class Individual implements Comparable<Individual> {
 	private LinkedList<Vertex> vertices;
 	
-	public Clique(){
+	private double fitness;
+	
+	public Individual(){
 		vertices = new LinkedList<Vertex>();
 	}
 	
-	public Clique(Graph graph){
+	public Individual(Graph graph){
 		int [][] adjMatrix;
 		int verticesNumber;
 		
 		vertices = new LinkedList<Vertex>();
-	
+		
 		adjMatrix = graph.getAdjMatrix();
 		verticesNumber = adjMatrix.length;
 			
@@ -25,12 +28,12 @@ public class Clique {
 			for(int toIndex = 0; toIndex<tab.length; toIndex++){
 				if( (tab[toIndex] == 1) && ( vIndex != toIndex ) ){
 					v.addEdge(new Edge(vIndex, toIndex));
-			//		System.out.println("Added edge: " + vIndex + " " + toIndex);
 				}
 			}	
 			addVertex(v);
-		//	System.out.println("Vertex: " + v.getIndex() + " degree is: " + v.getDegree());
 		}
+		
+		fitness = getEdgeCount() / (((vertices.size() - 1)*(vertices.size())) / 2);
 	}
 	
 	public void addVertex(Vertex v){
@@ -55,7 +58,7 @@ public class Clique {
 		vertices.remove(v);			
 	}
 	
-	public LinkedList<Vertex> getVertexes(){
+	public LinkedList<Vertex> getVertices(){
 		return vertices;
 	}
 	
@@ -66,5 +69,52 @@ public class Clique {
 		}
 		
 		return true;
+	}
+	
+	public int getEdgeCount(){
+		int result = 0;
+		
+		for (Vertex v: vertices){
+			result += v.getDegree();
+		}
+		result = result / 2;
+		
+		return result;
+	}
+	
+	public double getFitness(){
+		return fitness;
+	}
+
+	public void updateEdges(Graph graph) {
+		int adjMatrix[][] = graph.getAdjMatrix();
+		LinkedList<Edge> edges;
+		
+		for(Vertex v: vertices){
+			int fromIndex = v.getIndex();
+			edges = new LinkedList<Edge>();
+			
+			for(Vertex n: vertices){
+				int toIndex = n.getIndex();		
+				
+				if (adjMatrix[fromIndex][toIndex] == 1)
+					edges.add(new Edge(fromIndex, toIndex));
+			}
+			
+			v.setEdges(edges);
+		}
+		
+		fitness = getEdgeCount() / (((vertices.size() - 1)*(vertices.size())) / 2);
+	}
+
+	@Override
+	public int compareTo(Individual arg0) {
+		
+		if (this.fitness > arg0.fitness)
+			return 1;
+		if (this.fitness < arg0.fitness)
+			return -1;
+		
+		return 0;
 	}
 }
