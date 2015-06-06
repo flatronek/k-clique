@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Random;
 
+import controller.CliqueManager;
 import graph.*;
 
 public class CliqueFinder {
@@ -14,23 +15,13 @@ public class CliqueFinder {
 	
 	private final double MUTATION_PROB = 0.1;
 	
-	public static void main(String[] args){
-		CliqueFinder cf = CliqueFinder.getCliqueFinder();
-		LinkedList<Individual> result;
-		
-		int[][] matrix = new int[8][8];	
-		for(int i=0; i<8; i++){
-			for(int j=0; j<8; j++){
-				if (i != j) matrix[i][j] = 1;
-			}
-		}
-		
-		Graph graph = new Graph(matrix);
-		
-		result = cf.findClique(graph, 4, 4, 20);
-		cf.showPopulation2(result, "Result");
-		cf.showFitness(result, "Result");
-	}
+	private final String ROULETTE_SELECTION = "roulette";
+	private final String TOURNAMENT_SELECTION = "tournament";
+	
+	private boolean hasDelay;
+	private int delayTime;
+	
+	private CliqueManager cm;
 	
 	public static CliqueFinder getCliqueFinder(){
 		if( cf == null )
@@ -38,46 +29,49 @@ public class CliqueFinder {
 		return cf;
 	}
 	
-	private CliqueFinder(){
-		
+	public void setManager(CliqueManager cm){
+		this.cm = cm;
 	}
 	
-	public LinkedList<Individual> findClique(Graph graph, int populationSize, int cliqueSize, int maxItCount){
+	private CliqueFinder(){
+		this.cm = null;
+		this.hasDelay = false;
+		this.delayTime = 500;
+	}
+	
+	public LinkedList<Individual> findClique(InputGraph graph, int populationSize, int cliqueSize, int maxItCount, String selectionMode){
 		LinkedList<Individual> currGeneration;
+		Individual theFittest, tmp;
 		
 		currGeneration = findInitialPopulation(graph, populationSize, cliqueSize);
+		theFittest = findFittestIndividual(currGeneration);
+		
+		cm.setTheFittest(theFittest);
+		cm.setCurrentGeneration(currGeneration);
+		
 		for (int i = 0; i < maxItCount; i++){
-			showPopulation2(currGeneration, "Generation "+i);
-			currGeneration = nextGeneration(currGeneration, graph);
+			currGeneration = nextGeneration(currGeneration, graph, selectionMode);
+			cm.setCurrentGeneration(currGeneration);
+			
+			tmp = findFittestIndividual(currGeneration);
+			if (theFittest.getFitness() < tmp.getFitness()){
+				theFittest = tmp;
+
+				cm.setTheFittest(theFittest);
+			}		
+			
+			if (theFittest.getFitness() == 1)
+				break;
+			
+			delay();
 		}
 		
+		showIndividual(theFittest, "The fittest");
 		return currGeneration;
 	}
-	
-	public LinkedList<Individual> nextGeneration(LinkedList<Individual> currGeneration, Graph graph){
-		LinkedList<Individual> nextGeneration, parents, offspring;
-		int populationSize;
-		
-		populationSize = currGeneration.size();
-		nextGeneration = new LinkedList<Individual>();
-		
-		while (nextGeneration.size() < populationSize){
 
-			do {
-				parents = rouletteSelection(currGeneration);
-				offspring = singlepointCrossover(parents, graph);
-			}
-			while (hasDuplicatedGene(offspring));
-			
-			nextGeneration.addAll(offspring);	
-		//	showPopulation(parents, "Parents");
-		//	showPopulation(offspring, "Offspring");
-		}
-			
-		return nextGeneration;
-	}
-	
-	public LinkedList<Individual> findInitialPopulation(Graph graph, int populationSize, int cliqueSize){
+
+	public LinkedList<Individual> findInitialPopulation(InputGraph graph, int populationSize, int cliqueSize){
 		LinkedList<Individual> population = new LinkedList<Individual>();
 		
 		for (int i=0; i<populationSize; i++){
@@ -95,6 +89,31 @@ public class CliqueFinder {
 		return population;
 	}
 	
+	public LinkedList<Individual> nextGeneration(LinkedList<Individual> currGeneration, InputGraph graph, String selectionMode){
+		LinkedList<Individual> nextGeneration, parents, offspring;
+		int populationSize;
+		
+		populationSize = currGeneration.size();
+		nextGeneration = new LinkedList<Individual>();
+		
+		while (nextGeneration.size() < populationSize){
+
+			do {
+				switch (selectionMode){
+					case TOURNAMENT_SELECTION: parents = tournamentSelection(currGeneration);
+					case ROULETTE_SELECTION: parents = rouletteSelection(currGeneration);
+					default: parents = rouletteSelection(currGeneration);
+				}
+				offspring = singlepointCrossover(parents, graph);
+			}
+			while (hasDuplicatedGene(offspring));
+			
+			nextGeneration.addAll(offspring);	
+		}
+			
+		return nextGeneration;
+	}
+	
 	public LinkedList<Individual> rouletteSelection(LinkedList<Individual> population){
 		LinkedList<Individual> parents = new LinkedList<Individual>();
 		
@@ -106,13 +125,14 @@ public class CliqueFinder {
 		
 		while (!found){
 			fIndex = (int) (populationSize*Math.random());
-			if (Math.random() < population.get(fIndex).getFitness())
+			double rand = Math.random();
+			if (rand <= population.get(fIndex).getFitness())
 				break;
 		}
 		
 		while (!found){
 			sIndex = (int) (populationSize*Math.random());
-			if ((Math.random() < population.get(sIndex).getFitness()) && (sIndex != fIndex))
+			if ((Math.random() <= population.get(sIndex).getFitness()) && (sIndex != fIndex))
 				break;
 		}
 		
@@ -122,13 +142,30 @@ public class CliqueFinder {
 		return parents;
 	}
 	
-	public LinkedList<Individual> singlepointCrossover(LinkedList<Individual> parents, Graph graph){
+	public LinkedList<Individual> tournamentSelection(LinkedList<Individual> population){
+		LinkedList<Individual> parents = new LinkedList<Individual>();
+		LinkedList<Individual> tournamentGroup = new LinkedList<Individual>();
+		
+		int populationSize = population.size();
+		
+		for (Integer i: generateUniqueNumbers(4, populationSize)){
+			tournamentGroup.add(population.get(i));
+		}
+		
+		tournamentGroup.sort(null);
+		
+		parents.add(tournamentGroup.get(2));
+		parents.add(tournamentGroup.get(3));
+		
+		return parents;
+	}
+	
+	public LinkedList<Individual> singlepointCrossover(LinkedList<Individual> parents, InputGraph graph){
 		LinkedList<Individual> offspring;
 		Individual fChild, sChild;
 		
 		int i = 0;
 		int coPoint = new Random().nextInt(parents.get(0).getVertices().size());
-		System.out.println("\nCrossover point: " + coPoint);
 		
 		offspring = new LinkedList<Individual>();		
 		fChild = new Individual();
@@ -162,7 +199,7 @@ public class CliqueFinder {
 		return offspring;
 	}
 	
-	public void mutate(Individual ind, Graph graph){
+	public void mutate(Individual ind, InputGraph graph){
 		LinkedList<Vertex> vertices = ind.getVertices();
 		int [][]adjMatrix = graph.getAdjMatrix();
 		
@@ -215,6 +252,25 @@ public class CliqueFinder {
 		return result;
 	}
 	
+	private Individual findFittestIndividual(LinkedList<Individual> list){
+		LinkedList<Individual> temp;
+		
+		temp = new LinkedList<Individual>(list);
+		temp.sort(null);
+		
+		return temp.getLast();
+	}
+	
+	private void delay() {
+		if (hasDelay)
+			try {
+				Thread.sleep(delayTime);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	}
+	
 	public void showPopulation(LinkedList<Individual> population, String text){
 		int i = 1;
 		
@@ -241,6 +297,19 @@ public class CliqueFinder {
 		};
 	}
 	
+	public void showIndividual(Individual ind, String text){
+		
+		System.out.println("\n\n"+text+" has fitness: " + ind.getFitness());
+		for(Vertex v: ind.getVertices()){
+			System.out.print("\nVertex no: " + v.getIndex() + "\n" + 
+					" Connected to: ");
+			for(Edge e: v.getEdges())
+				System.out.print(e.getToIndex() + "; ");		
+		}
+		
+		System.out.println("\n");
+	}
+	
 	public void showFitness(LinkedList<Individual> population, String text){
 		population.sort(null);
 
@@ -252,6 +321,17 @@ public class CliqueFinder {
 			}
 		};
 	}
+	
+	public void setDelayTime(int dTime){
+		this.delayTime = dTime;
+	}
+	
+	public void setDelay(boolean delay){
+		this.hasDelay = delay;
+	}
+	
+	
+	
 	
 /*	private void initIndividual(Individual Individual, Graph graph) {
 		int [][] adjMatrix;

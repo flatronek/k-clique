@@ -1,6 +1,5 @@
 package graph;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 
 public class Individual implements Comparable<Individual> {
@@ -12,7 +11,7 @@ public class Individual implements Comparable<Individual> {
 		vertices = new LinkedList<Vertex>();
 	}
 	
-	public Individual(Graph graph){
+	public Individual(InputGraph graph){
 		int [][] adjMatrix;
 		int verticesNumber;
 		
@@ -86,7 +85,7 @@ public class Individual implements Comparable<Individual> {
 		return fitness;
 	}
 
-	public void updateEdges(Graph graph) {
+	public void updateEdges(InputGraph graph) {
 		int adjMatrix[][] = graph.getAdjMatrix();
 		LinkedList<Edge> edges;
 		
@@ -103,8 +102,10 @@ public class Individual implements Comparable<Individual> {
 			
 			v.setEdges(edges);
 		}
-		
-		fitness = getEdgeCount() / (((vertices.size() - 1)*(vertices.size())) / 2);
+		double indEdges = getEdgeCount();
+		double cliqueEdges = (((vertices.size() - 1)*(vertices.size())) / 2);
+
+		fitness = indEdges / cliqueEdges;
 	}
 
 	@Override

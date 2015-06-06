@@ -15,6 +15,16 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.border.TitledBorder;
 
+import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
+import edu.uci.ics.jung.algorithms.layout.KKLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.graph.SparseGraph;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
+
 public class MainWindow extends JFrame {
 	
 	/**
@@ -61,6 +71,36 @@ public class MainWindow extends JFrame {
 		GroupLayout gl = new GroupLayout(pane);
 		pane.setLayout(gl);
 		
+		Graph<Integer, String> testGraph;
+		
+		testGraph = new SparseGraph<Integer, String>();
+		testGraph.addVertex((Integer) 1);
+		testGraph.addVertex((Integer) 2);
+		testGraph.addVertex((Integer) 3);
+		testGraph.addVertex((Integer) 4);
+		
+		testGraph.addEdge("Edge-A", 1, 2); // Note that Java 1.5 auto-boxes primitives
+		testGraph.addEdge("Edge-B", 2, 3);
+		testGraph.addEdge("Edge-C", 3, 1);
+		testGraph.addEdge("Edge-D", 3, 4);
+		
+		
+		// The Layout<V, E> is parameterized by the vertex and edge types
+		Layout<Integer, String> layout = new FRLayout<Integer, String>(testGraph);
+		layout.setSize(new Dimension(300,300)); // sets the initial size of the space
+		// The BasicVisualizationServer<V,E> is parameterized by the edge types
+		BasicVisualizationServer<Integer,String> vv =
+				new BasicVisualizationServer<Integer,String>(layout);
+		vv.setPreferredSize(new Dimension(350,350)); //Sets the viewing area size
+
+	/*	Transformer<Integer,Paint> vertexPaint = new Transformer<Integer,Paint>() {
+			 public Paint transform(Integer i) {
+				 return Color.GREEN;
+			 }
+		}; */
+		vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Integer>());
+		vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
+			 
 		adjMatrix = null;
 		
 		centralPanel = new JPanel();
@@ -94,14 +134,14 @@ public class MainWindow extends JFrame {
 				.addComponent(centralPanel, 800, 800, GroupLayout.PREFERRED_SIZE)
 				.addGroup(gl.createSequentialGroup()
 						.addComponent(inputPanel, GroupLayout.DEFAULT_SIZE, 400, GroupLayout.PREFERRED_SIZE)
-						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, 400, GroupLayout.PREFERRED_SIZE)
+						.addComponent(vv, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
 				));
 		
 		gl.setVerticalGroup(gl.createSequentialGroup()
 				.addComponent(centralPanel, 80, 80, 80) 
 				.addGroup(gl.createParallelGroup(GroupLayout.Alignment.LEADING)
 						.addComponent(inputPanel, 400, 400, GroupLayout.PREFERRED_SIZE)
-						.addComponent(graphPanel, 400, 400, GroupLayout.PREFERRED_SIZE)
+						.addComponent(vv, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
 				));
 		
 		generateInputMatrixButton.addActionListener(new ActionListener() {
