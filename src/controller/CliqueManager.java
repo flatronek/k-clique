@@ -20,21 +20,23 @@ public class CliqueManager {
 	
 	private Thread searching;
 	
+	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		CliqueManager cm = new CliqueManager();
-		long start, stop;
+	/*	long start, stop;
 	
-		cm.generateRandomGraph(50);
+		cm.initGraphFromFile("testMatrix.txt");
+	//	cm.generateRandomGraph(50);
 	//	cm.setDelay(true, 25);
 		
 		start = System.nanoTime();
-		cm.findClique(30, 7, 100, "roulette");
+		cm.findClique(20, 3, 100, "tournament");
 		stop = System.nanoTime();
 		
 		//System.out.println("Input: " + cm.getInputGraph().toString());
 		System.out.println("Fittest: \n" + cm.getTheFittest().toString());
 		
-		System.out.println("\nStart: " + start + ". Stop: " + stop + ". Elapsed: " + (stop-start) + "ns.");
+		System.out.println("\nStart: " + start + ". Stop: " + stop + ". Elapsed: " + (stop-start) + "ns.");*/
 	}
 	
 	public CliqueManager(){
@@ -46,27 +48,42 @@ public class CliqueManager {
 		cf = CliqueFinder.getCliqueFinder();
 		cf.setManager(this);
 		
-		//showWindow();
+		showWindow();
 	}
 	
 	public synchronized void findClique(int populationSize, int cliqueSize, int maxItCount, String selectionMode){
-		
+
 		searching = new Thread(new Runnable(){
 
 			@Override
 			public void run() {
-				cf.findClique(inputGraph, populationSize, cliqueSize, maxItCount, "roulette");
+				cf.findClique(inputGraph, populationSize, cliqueSize, maxItCount, parseSelectionMode(selectionMode));
 			}
 			
 		});
 		
 		searching.start();
-		try {
-			searching.join();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	}
+	
+	private String parseSelectionMode(String mode){
+		String selected;
+		
+		switch (mode){
+		case MainWindow.ROULETTE_SELECTION:
+			selected = new String(CliqueFinder.ROULETTE_SELECTION);
+			break;
+		case MainWindow.TOURNAMENT_SELECTION:
+			selected = new String(CliqueFinder.TOURNAMENT_SELECTION);
+			break;
+		default: 
+			selected = new String(CliqueFinder.ROULETTE_SELECTION);
 		}
+		
+//		System.out.println(mode.equals(MainWindow.ROULETTE_SELECTION));
+//		System.out.println(mode.equals(MainWindow.TOURNAMENT_SELECTION));
+//		System.out.println("Input: "+mode);
+//		System.out.println("Selected: "+selected);
+		return selected;
 	}
 	
 	public void cancel(){
@@ -81,7 +98,7 @@ public class CliqueManager {
 		EventQueue.invokeLater(new Runnable(){
 			@Override
 			public void run() {
-				view = new MainWindow();			
+				view = new MainWindow(CliqueManager.this);			
 			}
 		});
 	}
@@ -89,7 +106,7 @@ public class CliqueManager {
 	public void setTheFittest(Individual fittest){
 		this.theFittest = fittest;
 		
-		// view.updateGraph();
+		 view.updateGraph();
 		//cf.showIndividual(theFittest, "Fittest from CM: ");
 	}
 	
@@ -113,7 +130,7 @@ public class CliqueManager {
 		return result;
 	}
 	
-	private LinkedList<Integer> getTheFittestVertices(){
+	public LinkedList<Integer> getTheFittestVertices(){
 		LinkedList<Integer> result;
 		LinkedList<Vertex> vertices;
 		
@@ -220,13 +237,13 @@ public class CliqueManager {
 	public void initGraphFromFile(String fname){
 		inputGraph = new InputGraph(fname);
 		
-		// view.drawInputGraph();
+		view.drawInputGraph();
 	}
 	
 	public void generateRandomGraph(int size){
 		inputGraph = new InputGraph(size);
 		
-		// view.drawInputGraph();
+		view.drawInputGraph();
 	}
 	
 	public void setDelay(boolean delay, int dTime){

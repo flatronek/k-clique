@@ -13,10 +13,10 @@ public class CliqueFinder {
 	
 	private static CliqueFinder cf = null;
 	
-	private final double MUTATION_PROB = 0.1;
+	private final double MUTATION_PROB = 0.05;
 	
-	private final String ROULETTE_SELECTION = "roulette";
-	private final String TOURNAMENT_SELECTION = "tournament";
+	public static final String ROULETTE_SELECTION = "roulette";
+	public static final String TOURNAMENT_SELECTION = "tournament";
 	
 	private boolean hasDelay;
 	private int delayTime;
@@ -39,9 +39,12 @@ public class CliqueFinder {
 		this.delayTime = 500;
 	}
 	
-	public LinkedList<Individual> findClique(InputGraph graph, int populationSize, int cliqueSize, int maxItCount, String selectionMode){
+	public synchronized LinkedList<Individual> findClique(InputGraph graph, int populationSize, int cliqueSize, int maxItCount, String selectionMode){
 		LinkedList<Individual> currGeneration;
 		Individual theFittest, tmp;
+		String mode;
+		
+		mode = new String(selectionMode);
 		
 		currGeneration = findInitialPopulation(graph, populationSize, cliqueSize);
 		theFittest = findFittestIndividual(currGeneration);
@@ -50,7 +53,7 @@ public class CliqueFinder {
 		cm.setCurrentGeneration(currGeneration);
 		
 		for (int i = 0; i < maxItCount; i++){
-			currGeneration = nextGeneration(currGeneration, graph, selectionMode);
+			currGeneration = nextGeneration(currGeneration, graph, mode);
 			cm.setCurrentGeneration(currGeneration);
 			
 			tmp = findFittestIndividual(currGeneration);
@@ -97,12 +100,16 @@ public class CliqueFinder {
 		nextGeneration = new LinkedList<Individual>();
 		
 		while (nextGeneration.size() < populationSize){
-
 			do {
 				switch (selectionMode){
-					case TOURNAMENT_SELECTION: parents = tournamentSelection(currGeneration);
-					case ROULETTE_SELECTION: parents = rouletteSelection(currGeneration);
-					default: parents = rouletteSelection(currGeneration);
+					case TOURNAMENT_SELECTION:
+						parents = tournamentSelection(currGeneration);
+						break;
+					case ROULETTE_SELECTION:
+						parents = rouletteSelection(currGeneration);
+						break;
+					default:
+						parents = rouletteSelection(currGeneration);
 				}
 				offspring = singlepointCrossover(parents, graph);
 			}
