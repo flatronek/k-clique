@@ -110,7 +110,7 @@ public class CliqueManager {
 	public void setTheFittest(Individual fittest){
 		this.theFittest = fittest;
 		
-		 view.updateGraph();
+		 view.updateGraph(getTheFittestVertices());
 		//cf.showIndividual(theFittest, "Fittest from CM: ");
 	}
 	
@@ -139,6 +139,19 @@ public class CliqueManager {
 		LinkedList<Vertex> vertices;
 		
 		vertices = theFittest.getVertices();
+		
+		result = new LinkedList<Integer>();
+		for (Vertex v: vertices)
+			result.add(new Integer(v.getIndex()));
+		
+		return result;
+	}
+	
+	private LinkedList<Integer> getIndividualVertices(Individual ind){
+		LinkedList<Integer> result;
+		LinkedList<Vertex> vertices;
+		
+		vertices = ind.getVertices();
 		
 		result = new LinkedList<Integer>();
 		for (Vertex v: vertices)
@@ -247,8 +260,12 @@ public class CliqueManager {
 	
 	public void getSearchInfo(String key) {
 		String desc;
-		desc = prevSearches.get(key).toString();
+		Individual ind;
 		
+		ind = prevSearches.get(key);
+		desc = ind.toString();
+		
+		view.updateGraph(getIndividualVertices(ind));
 		view.updateSearchInfo(desc);
 	}
 	
@@ -273,6 +290,17 @@ public class CliqueManager {
 	}
 	
 	public void initGraph(int matrix[][]){
+		inputGraph = new InputGraph(matrix);
+		currGeneration = null;
+		theFittest = null;
+		prevSearches  = new HashMap<String, Individual>();
+		
+		view.clearList();
+		view.drawInputGraph();
+	}
+	
+	public void reInit() {
+		int [][] matrix = inputGraph.getAdjMatrix();
 		inputGraph = new InputGraph(matrix);
 		currGeneration = null;
 		theFittest = null;

@@ -32,7 +32,8 @@ public class GraphEditor extends JFrame{
 	private static final long serialVersionUID = 1097220164362420049L;
 
 	CliqueManager cm;
-	
+	// factory sa wykorzystywane przez junga przy rysowaniu wlasnego grafu
+	// sluza do nazywania tworzonych wierzcholkow/krawedzi
 	Graph<Integer, String> graph;
 	Factory<Integer> vertexFactory;
 	Factory<String> edgeFactory;
@@ -78,6 +79,8 @@ public class GraphEditor extends JFrame{
 	}
 	
 	public void ui() {
+		// z tutoriala
+		// tworzy panel na ktorym mozemy tworzyc dowolny graf
 		Layout<Integer, String> layout = new StaticLayout<Integer, String>(graph);
 		layout.setSize(new Dimension(500,500));
 		VisualizationViewer<Integer,String> vv =
@@ -97,7 +100,7 @@ public class GraphEditor extends JFrame{
 		 // Let's add a menu for changing mouse modes
 		menuBar = new JMenuBar();
 		graphMenu = new JMenu("Graph");
-	
+		// przycisk do konczenia edycji
 		JMenuItem save = new JMenuItem("Save");
 		save.setAccelerator(KeyStroke.getKeyStroke(
 		        KeyEvent.VK_S, ActionEvent.CTRL_MASK));
@@ -109,7 +112,8 @@ public class GraphEditor extends JFrame{
 		});
 		graphMenu.add(save);
 		menuBar.add(graphMenu);
-		
+		// dodawanie do menu listy opcji generowanej przez junga
+		// transformacji grafu, dodawania i przesuwania pojedynczych wierzcholkow
 		modeMenu = gm.getModeMenu(); // Obtain mode menu from the mouse
 		modeMenu.setText("Mouse mode");
 		modeMenu.setIcon(null); // I'm using this in a main menu
@@ -120,7 +124,11 @@ public class GraphEditor extends JFrame{
 		
 		gm.setMode(ModalGraphMouse.Mode.EDITING);
 	}
-
+	// akcja przycisku w menu lub ctrl+s
+	// zamienia graf ktory wprowadzil uzytkownik w jungu
+	// na macierz sasiedztwa
+	// wywoluje w modelu funkcje inicjalizujaca graf
+	// zamyka okno
 	protected void saveAction() {
 		Pair<Integer> p;
 		int [][] adjMatrix;

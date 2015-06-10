@@ -57,43 +57,48 @@ public class MainWindow extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 6299554134217402886L;
+	
+	// stringi do zmiany rodzaju selekcji
 	public static final String ROULETTE_SELECTION = "Roulette";
 	public static final String TOURNAMENT_SELECTION = "Tournament";
-
-	AdjacencyCell[][] adjMatrix;
 	
+	// spajanie z modelem
 	CliqueManager cm;
 	
+	// graf, layout i rysowanie wszystko z junga
 	Graph<Integer, String> graph;
 	Layout<Integer, String> graphLayout;
 	BasicVisualizationServer<Integer,String> graphVisualisation;
 	
+	// otwierane okno sluzace do wprowadzenia wielkosci nowego losowego grafu
 	GenerateWindow generateWindow;
+	// otwierane okno sluzace do rysowania nowego grafu w jungu
 	GraphEditor graphEditor;
-	
+	// pasek menu
 	JMenuBar menuBar;
-	
+	// opcje paska menu
 	JMenu fileMenu;
 	JMenuItem openFile;
 	JMenuItem generateMatrix;
 	JMenuItem drawGraph;
-
+	
 	JMenu layoutMenu;
 	JRadioButtonMenuItem circleLayoutMenuItem;
 	JRadioButtonMenuItem frLayoutMenuItem;
 	ButtonGroup layoutMenuGroup;
-	
+	// layouty calosci programu i panelu opcji
+	GroupLayout gl;
 	GroupLayout optionsLayout;
-	
+	// 3 glowne panele
 	JPanel optionsPanel;
 	JPanel infoPanel;
 	JPanel graphPanel;
-	
+	// komponenty panelu info
 	DefaultListModel<String> listModel;
 	JList<String> searchesList;
 	JScrollPane listScroller;
 	JTextArea searchInfo;
-	
+	// komponenty panelu opcji
 	JLabel selectionTypeLb;
 	JComboBox<String> selectionType;
 	
@@ -129,18 +134,18 @@ public class MainWindow extends JFrame {
 	}
 
 	private void drawUi() {
+		// pobieramy caly glowny panel i ustawiamy na nim nowy layout
 		JPanel pane = (JPanel) getContentPane();
-		GroupLayout gl = new GroupLayout(pane);
+		gl = new GroupLayout(pane);
 		pane.setLayout(gl);
-			 
-		adjMatrix = null;
 		
+		// inicjalizacja paska menu
 		menuBar = new JMenuBar();
-		
+		// lista menu
 		fileMenu = new JMenu("Graph");
 		fileMenu.setMnemonic(KeyEvent.VK_G);
 		menuBar.add(fileMenu);
-		
+		// dodawanie pojedynczej opcji w menu, ustawianie skrotu klawiszowego
 		openFile = new JMenuItem("Open file");
 		openFile.setAccelerator(KeyStroke.getKeyStroke(
 		        KeyEvent.VK_O, ActionEvent.CTRL_MASK));
@@ -161,15 +166,16 @@ public class MainWindow extends JFrame {
 		drawGraph.getAccessibleContext().setAccessibleDescription(
 				"Manually draw a graph.");
 		fileMenu.add(drawGraph);
-		
+		// druga lista menu, wybieranie layoutu junga
 		layoutMenu = new JMenu("Layout");
 		layoutMenu.setMnemonic(KeyEvent.VK_L);
 		menuBar.add(layoutMenu);
-		
+		// to jest RadioButton wiec trzeba zrobic ButtonGroup zeby zgrupowac ktore opcje sie przelaczaja
 		layoutMenuGroup = new ButtonGroup();
 		circleLayoutMenuItem = new JRadioButtonMenuItem("Circle layout");
 		circleLayoutMenuItem.setSelected(true);
-		circleLayoutMenuItem.addChangeListener(new ChangeListener() {		
+		circleLayoutMenuItem.addChangeListener(new ChangeListener() {
+			// listener na zmiane, jezeli zmienimy opcje layoutu to chcemy graf narysowac jeszcze raz
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (circleLayoutMenuItem.isSelected())
@@ -178,7 +184,7 @@ public class MainWindow extends JFrame {
 		});
 		layoutMenuGroup.add(circleLayoutMenuItem);
 		layoutMenu.add(circleLayoutMenuItem);
-
+		// to samo co wyzej
 		frLayoutMenuItem = new JRadioButtonMenuItem("FR layout");
 		frLayoutMenuItem.addChangeListener(new ChangeListener() {	
 			@Override
@@ -190,7 +196,7 @@ public class MainWindow extends JFrame {
 		layoutMenu.add(frLayoutMenuItem);
 		
 		this.setJMenuBar(menuBar);
-		
+		// inicjalizacja komponentow panelu opcji
 		inputSizeSpinner = new JSpinner();
 		inputSizeSpinner.setPreferredSize(new Dimension(30, 30));
 		
@@ -223,7 +229,7 @@ public class MainWindow extends JFrame {
 		cliqueSizeLb = new JLabel("Clique size");
 		cliqueSize = new JSpinner();
 		cliqueSize.setPreferredSize(new Dimension(50, 30));
-		
+		// listener: jesli wylaczymy delay to nie mozna zmieniac opcji
 		delay = new JCheckBox("Delay");
 		delay.setSelected(true);
 		delay.addChangeListener(new ChangeListener(){
@@ -240,6 +246,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
+		// listener: jesli zmienimy delay w spinnerze to pasek pod spodem sie przesuwa
 		delayTimeSpinner = new JSpinner();
 		delayTimeSpinner.setValue((int)250);
 		delayTimeSpinner.setPreferredSize(new Dimension(50, 30));
@@ -249,7 +256,7 @@ public class MainWindow extends JFrame {
 				delayTime.setValue((int) delayTimeSpinner.getValue());		
 			}
 		});
-		
+		// listener: jesli przesuniemy pasek to wartosc w spinnerze sie zmienia
 		delayTime = new JSlider(JSlider.HORIZONTAL, 0, 500, 250);
 		delayTime.setMajorTickSpacing(250);
 		delayTime.setMinorTickSpacing(50);
@@ -261,7 +268,7 @@ public class MainWindow extends JFrame {
 				delayTimeSpinner.setValue((int) delayTime.getValue());		
 			}
 		});
-		
+		// inicjalizacja 3 paneli
 		optionsPanel = new JPanel();
 		infoPanel = new JPanel();
 		graphPanel = new JPanel();
@@ -269,13 +276,14 @@ public class MainWindow extends JFrame {
 		optionsLayout = new GroupLayout(optionsPanel);
 		optionsLayout.setAutoCreateContainerGaps(true);
 		optionsLayout.setAutoCreateGaps(true);
-		
-		optionsPanel.add(selectionTypeLb);
-		optionsPanel.add(selectionType);
 		optionsPanel.setPreferredSize(new Dimension(200,600));
-		optionsPanel.setLayout(optionsLayout);		
+		optionsPanel.setLayout(optionsLayout);	
+		// funkcja ustawiajaca wszystkie elementy w panelu opcji
 		createOptionsLayout();
-	
+		// tworzenie listy poprzednich przeszukiwan: model przechowuje kazdy pojedynczy wpis
+		// listener: jezeli klikniemy na dane przeszukiwanie podswietla sie klika znaleziona w tym przeszukiwaniu
+		// i wyswietla sie informacja o danej klice
+		// wywolywana jest funkcja modelu
 		listModel = new DefaultListModel<String>();
 		searchesList = new JList<String>(listModel); //data has type Object[]
 		searchesList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
@@ -288,10 +296,10 @@ public class MainWindow extends JFrame {
 					cm.getSearchInfo(searchesList.getSelectedValue());
 			}
 		});
-
+		// mozemy przesuwac liste w gore i w dol
 		listScroller = new JScrollPane(searchesList);
 		listScroller.setPreferredSize(new Dimension(250, 200));
-		
+		// panel gdzie wyswietlane jest info o danym przeszukiwaniu
 		searchInfo = new JTextArea();
 		searchInfo.setEditable(false);
 		searchInfo.setPreferredSize(new Dimension(250, 150));
@@ -301,11 +309,11 @@ public class MainWindow extends JFrame {
 		infoPanel.setLayout(new GridLayout(3, 1));
 		
 		graphPanel.setPreferredSize(new Dimension(600,600));
-		
+		// ustawianie ramek na glowne panele
 		optionsPanel.setBorder(BorderFactory.createTitledBorder(null, "Options", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
 		infoPanel.setBorder(BorderFactory.createTitledBorder(null, "Searches", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
 		graphPanel.setBorder(BorderFactory.createTitledBorder(null, "Graph", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
-		
+		// dodawanie 3 glownych paneli do layoutu calosci programu
 		gl.setHorizontalGroup(gl.createParallelGroup(GroupLayout.Alignment.LEADING)				
 				.addGroup(gl.createSequentialGroup()
 						.addComponent(optionsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -320,7 +328,7 @@ public class MainWindow extends JFrame {
 						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
 						.addComponent(infoPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
 				));
-		
+		// dodawanie listenerow do przyciskow
 		generateInputMatrixButton.addActionListener(new ActionListener() {
 			
 			@Override
@@ -369,11 +377,11 @@ public class MainWindow extends JFrame {
 			}
 		});
 	}
-	
+	// otwieramy nowe okno do rysowania grafu w jungu
 	protected void drawGraphAction() {
 		graphEditor = new GraphEditor(cm);
 	}
-
+	// otwieramy nowe okno do wybierania pliku z ktorego chcemy wczytac macierz sasiedztwa
 	protected void openFileAction() {
 		JFileChooser fBrowser = new JFileChooser();
 		fBrowser.setDialogTitle("Open");
@@ -388,13 +396,11 @@ public class MainWindow extends JFrame {
         }
 		
 	}
-
+	// reset, resetuje sie lista przeszukiwan, graf jest rysowany od nowa itp.
 	protected void resetAction() {
-		drawInputGraph();
-		
-		clearList();
+		cm.reInit();
 	}
-
+	// ustawianie elementow w panelu opcji
 	private void createOptionsLayout(){
 		optionsLayout.setHorizontalGroup(optionsLayout.createParallelGroup(GroupLayout.Alignment.CENTER)				
 				.addGroup(optionsLayout.createSequentialGroup()
@@ -464,7 +470,9 @@ public class MainWindow extends JFrame {
 						.addComponent(resetButton, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 				));
 	}
-	
+	// funkcja wywolywana z modelu
+	// rysuje nam graf wejsciowy przechowywany w modelu
+	// na srodkowym panelu (jung)
 	public void drawInputGraph(){
 		graphPanel.removeAll();
 		
@@ -483,10 +491,13 @@ public class MainWindow extends JFrame {
 		graphPanel.repaint();
 		graphPanel.revalidate();
 	}
-	
-	public void updateGraph(){
-		LinkedList<Integer> vertices = cm.getTheFittestVertices();
-
+	// funkcja sluzaca do podswietlenia wierzcholkow
+	// ktore znajduja sie w aktualnie najlepiej przystosowanym osobniku
+	// tej niby klice
+	// parametrem jest lista wierzcholkow w w/w klice
+	public void updateGraph(LinkedList<Integer> vertices){
+		// zmieniamy rysowanie kazedego wierzcholka w jungu
+		// jezeli wierzcholek jest w liscie to maluje go na zielono
 		Transformer<Integer,Paint> vertexPaint = new Transformer<Integer,Paint>() {
 			public Paint transform(Integer i) {
 				if (vertices.contains(i))
@@ -494,12 +505,12 @@ public class MainWindow extends JFrame {
 				return Color.RED;
 			}
 		}; 
-		
+		// ustawiamy nowy sposob rysowania wierzcholkow
 		graphVisualisation.getRenderContext().setVertexFillPaintTransformer(vertexPaint);
 		graphVisualisation.repaint();
 		graphVisualisation.revalidate();
 	}
-	
+	// zmienianie layoutu wyswietlania grafu w srodkowym panelu
 	public void updateGraphLayout(){
 		if (graph == null)
 			return;
@@ -509,7 +520,7 @@ public class MainWindow extends JFrame {
 		graphPanel.repaint();
 		graphPanel.revalidate();
 	}
-	
+	// tworzy nowy layout w zaleznosci od wybranej opcji w rozwijanym menu
 	private Layout<Integer, String> createGraphLayout(){
 		Layout<Integer, String> layout;
 		
@@ -522,21 +533,25 @@ public class MainWindow extends JFrame {
 		
 		return layout;
 	}
-	
+	// dodawanie nowego wpisu do listy przeszukiwan
+	// wywolywane w modelu
 	public void updateSearchesList(String entry) {
 		listModel.addElement(entry);
 		
 		searchesList.repaint();
 		searchesList.revalidate();
 	}
-	
+	// dodawanie info o kliknietym przeszukiwaniu
+	// wywolywane z modelu
+	// posrednio przez klikniecie na dany wpis w liscie
 	public void updateSearchInfo(String text){
 		searchInfo.setText(text);
 		
 		searchInfo.repaint();
 		searchInfo.revalidate();
 	}
-	
+	// czyszczenie listy i opisu
+	// wywolywane w modelu
 	public void clearList(){
 		listModel.removeAllElements();
 		searchInfo.setText("");
@@ -544,11 +559,14 @@ public class MainWindow extends JFrame {
 		searchesList.repaint();
 		searchesList.revalidate();
 	}
-	
+	// tworzenie nowego okna do wpisywania wielkosci generowanego grafu
+	// przypisane pod przycisk
 	private void generateMatrixAction(){
 		generateWindow = new GenerateWindow(cm);
 	}
-
+	// wywolywanie funkcji modelu z danymi pobranymi z pol
+	// wczesniej ustawiany jest delay przeszukiwania
+	// ktora ma znalezc klike
 	protected void findClique() {		
 		cm.setDelay(delay.isSelected(), (int) delayTimeSpinner.getValue()); 
 		cm.findClique((int) populationSize.getValue(), (int) cliqueSize.getValue(),
