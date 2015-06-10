@@ -3,6 +3,7 @@ package gui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,6 +12,8 @@ import java.io.File;
 import java.util.LinkedList;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -18,21 +21,30 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import org.apache.commons.collections15.Transformer;
 
 import controller.CliqueManager;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.BasicVisualizationServer;
@@ -57,18 +69,30 @@ public class MainWindow extends JFrame {
 	BasicVisualizationServer<Integer,String> graphVisualisation;
 	
 	GenerateWindow generateWindow;
+	GraphEditor graphEditor;
 	
 	JMenuBar menuBar;
-	JMenuItem openFile;
-	JMenuItem generateMatrix;
 	
 	JMenu fileMenu;
+	JMenuItem openFile;
+	JMenuItem generateMatrix;
+	JMenuItem drawGraph;
+
+	JMenu layoutMenu;
+	JRadioButtonMenuItem circleLayoutMenuItem;
+	JRadioButtonMenuItem frLayoutMenuItem;
+	ButtonGroup layoutMenuGroup;
 	
 	GroupLayout optionsLayout;
 	
 	JPanel optionsPanel;
-//	JPanel inputPanel;
+	JPanel infoPanel;
 	JPanel graphPanel;
+	
+	DefaultListModel<String> listModel;
+	JList<String> searchesList;
+	JScrollPane listScroller;
+	JTextArea searchInfo;
 	
 	JLabel selectionTypeLb;
 	JComboBox<String> selectionType;
@@ -93,19 +117,6 @@ public class MainWindow extends JFrame {
 	JButton stopButton;
 	JButton resetButton;
 	
-/*	public static void main(String[] args){
-		
-		EventQueue.invokeLater(new Runnable(){
-
-			@Override
-			public void run() {
-				@SuppressWarnings("unused")
-				MainWindow mw =  new MainWindow(null);
-			}
-			
-		});	
-	}*/
-	
 	public MainWindow(CliqueManager cm){
 		this.cm = cm;
 		
@@ -126,8 +137,8 @@ public class MainWindow extends JFrame {
 		
 		menuBar = new JMenuBar();
 		
-		fileMenu = new JMenu("Matrix");
-		fileMenu.setMnemonic(KeyEvent.VK_F);
+		fileMenu = new JMenu("Graph");
+		fileMenu.setMnemonic(KeyEvent.VK_G);
 		menuBar.add(fileMenu);
 		
 		openFile = new JMenuItem("Open file");
@@ -143,6 +154,40 @@ public class MainWindow extends JFrame {
 		generateMatrix.getAccessibleContext().setAccessibleDescription(
 				"Randomly generates a matrix with given size.");
 		fileMenu.add(generateMatrix);
+		
+		drawGraph = new JMenuItem("Draw graph");
+		drawGraph.setAccelerator(KeyStroke.getKeyStroke(
+		        KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+		drawGraph.getAccessibleContext().setAccessibleDescription(
+				"Manually draw a graph.");
+		fileMenu.add(drawGraph);
+		
+		layoutMenu = new JMenu("Layout");
+		layoutMenu.setMnemonic(KeyEvent.VK_L);
+		menuBar.add(layoutMenu);
+		
+		layoutMenuGroup = new ButtonGroup();
+		circleLayoutMenuItem = new JRadioButtonMenuItem("Circle layout");
+		circleLayoutMenuItem.setSelected(true);
+		circleLayoutMenuItem.addChangeListener(new ChangeListener() {		
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				if (circleLayoutMenuItem.isSelected())
+					updateGraphLayout();
+			}
+		});
+		layoutMenuGroup.add(circleLayoutMenuItem);
+		layoutMenu.add(circleLayoutMenuItem);
+
+		frLayoutMenuItem = new JRadioButtonMenuItem("FR layout");
+		frLayoutMenuItem.addChangeListener(new ChangeListener() {	
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				updateGraphLayout();
+			}
+		});
+		layoutMenuGroup.add(frLayoutMenuItem);
+		layoutMenu.add(frLayoutMenuItem);
 		
 		this.setJMenuBar(menuBar);
 		
@@ -218,7 +263,7 @@ public class MainWindow extends JFrame {
 		});
 		
 		optionsPanel = new JPanel();
-//		inputPanel = new JPanel();
+		infoPanel = new JPanel();
 		graphPanel = new JPanel();
 		
 		optionsLayout = new GroupLayout(optionsPanel);
@@ -231,24 +276,49 @@ public class MainWindow extends JFrame {
 		optionsPanel.setLayout(optionsLayout);		
 		createOptionsLayout();
 	
+		listModel = new DefaultListModel<String>();
+		searchesList = new JList<String>(listModel); //data has type Object[]
+		searchesList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		searchesList.setLayoutOrientation(JList.VERTICAL);
+		searchesList.setVisibleRowCount(-1);
+		searchesList.addListSelectionListener(new ListSelectionListener() {
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				if ((e.getValueIsAdjusting() == false) && (!searchesList.isSelectionEmpty()))
+					cm.getSearchInfo(searchesList.getSelectedValue());
+			}
+		});
+
+		listScroller = new JScrollPane(searchesList);
+		listScroller.setPreferredSize(new Dimension(250, 200));
+		
+		searchInfo = new JTextArea();
+		searchInfo.setEditable(false);
+		searchInfo.setPreferredSize(new Dimension(250, 150));
+		
+		infoPanel.add(listScroller);
+		infoPanel.add(searchInfo);
+		infoPanel.setLayout(new GridLayout(3, 1));
+		
 		graphPanel.setPreferredSize(new Dimension(600,600));
 		
-		
 		optionsPanel.setBorder(BorderFactory.createTitledBorder(null, "Options", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
-//		inputPanel.setBorder(BorderFactory.createTitledBorder(null, "Input", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
+		infoPanel.setBorder(BorderFactory.createTitledBorder(null, "Searches", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
 		graphPanel.setBorder(BorderFactory.createTitledBorder(null, "Graph", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, new Font("Times New Roman", 3, 14)));
 		
 		gl.setHorizontalGroup(gl.createParallelGroup(GroupLayout.Alignment.LEADING)				
 				.addGroup(gl.createSequentialGroup()
 						.addComponent(optionsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
 						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)
+						.addComponent(infoPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)
 						.addPreferredGap(ComponentPlacement.UNRELATED)
 				));
 		
 		gl.setVerticalGroup(gl.createSequentialGroup()
 				.addGroup(gl.createParallelGroup(GroupLayout.Alignment.LEADING)
 						.addComponent(optionsPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE) 
-						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)					
+						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
+						.addComponent(infoPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
 				));
 		
 		generateInputMatrixButton.addActionListener(new ActionListener() {
@@ -259,7 +329,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
-		findCliqueButton.addActionListener(new ActionListener(){
+		findCliqueButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -267,7 +337,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
-		generateMatrix.addActionListener(new ActionListener(){
+		generateMatrix.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -275,7 +345,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
-		resetButton.addActionListener(new ActionListener(){
+		resetButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -290,8 +360,20 @@ public class MainWindow extends JFrame {
 				openFileAction();
 			}
 		});
+		
+		drawGraph.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				drawGraphAction();
+			}
+		});
 	}
 	
+	protected void drawGraphAction() {
+		graphEditor = new GraphEditor(cm);
+	}
+
 	protected void openFileAction() {
 		JFileChooser fBrowser = new JFileChooser();
 		fBrowser.setDialogTitle("Open");
@@ -309,6 +391,8 @@ public class MainWindow extends JFrame {
 
 	protected void resetAction() {
 		drawInputGraph();
+		
+		clearList();
 	}
 
 	private void createOptionsLayout(){
@@ -387,8 +471,7 @@ public class MainWindow extends JFrame {
 		graph = cm.getInputGraph();
 			
 		// The Layout<V, E> is parameterized by the vertex and edge types
-		Layout<Integer, String> layout = new CircleLayout<Integer, String>(graph);
-		layout.setSize(new Dimension(550,550)); // sets the initial size of the space
+		Layout<Integer, String> layout = createGraphLayout();
 		// The BasicVisualizationServer<V,E> is parameterized by the edge types
 		graphVisualisation = new BasicVisualizationServer<Integer,String>(layout);
 		graphVisualisation.setPreferredSize(new Dimension(550,550)); //Sets the viewing area size
@@ -417,13 +500,59 @@ public class MainWindow extends JFrame {
 		graphVisualisation.revalidate();
 	}
 	
+	public void updateGraphLayout(){
+		if (graph == null)
+			return;
+					
+		graphVisualisation.setGraphLayout(createGraphLayout());
+		
+		graphPanel.repaint();
+		graphPanel.revalidate();
+	}
+	
+	private Layout<Integer, String> createGraphLayout(){
+		Layout<Integer, String> layout;
+		
+		if (circleLayoutMenuItem.isSelected())
+			layout = new CircleLayout<Integer, String>(graph);
+		else
+			layout = new FRLayout<Integer, String>(graph);
+		
+		layout.setSize(new Dimension(550,550));
+		
+		return layout;
+	}
+	
+	public void updateSearchesList(String entry) {
+		listModel.addElement(entry);
+		
+		searchesList.repaint();
+		searchesList.revalidate();
+	}
+	
+	public void updateSearchInfo(String text){
+		searchInfo.setText(text);
+		
+		searchInfo.repaint();
+		searchInfo.revalidate();
+	}
+	
+	public void clearList(){
+		listModel.removeAllElements();
+		searchInfo.setText("");
+		
+		searchesList.repaint();
+		searchesList.revalidate();
+	}
+	
 	private void generateMatrixAction(){
 		generateWindow = new GenerateWindow(cm);
 	}
 
 	protected void findClique() {		
 		cm.setDelay(delay.isSelected(), (int) delayTimeSpinner.getValue()); 
-		cm.findClique((int) populationSize.getValue(), (int) cliqueSize.getValue(), (int)itCount.getValue(), selectionType.getSelectedItem().toString());
+		cm.findClique((int) populationSize.getValue(), (int) cliqueSize.getValue(),
+				(int)itCount.getValue(), selectionType.getSelectedItem().toString());
 	}
 
 /*	protected void generateInputMatrix(int size) {

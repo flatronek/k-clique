@@ -1,7 +1,9 @@
 package controller;
 
 import java.awt.EventQueue;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.SparseGraph;
@@ -14,6 +16,7 @@ public class CliqueManager {
 	private Individual theFittest;
 	private LinkedList<Individual> currGeneration;
 	private InputGraph inputGraph;
+	private Map<String, Individual> prevSearches;
 	
 	private CliqueFinder cf;
 	private MainWindow view;
@@ -44,6 +47,7 @@ public class CliqueManager {
 		currGeneration = null;
 		searching = null;
 		inputGraph = null;
+		prevSearches = new HashMap<String, Individual>();
 		
 		cf = CliqueFinder.getCliqueFinder();
 		cf.setManager(this);
@@ -234,15 +238,47 @@ public class CliqueManager {
 		return false;
 	}
 	
+	public void addSearchResult(Individual ind) {
+		String key = new String("Search " + prevSearches.size());
+		prevSearches.put(key, ind);
+		
+		view.updateSearchesList(key);
+	}
+	
+	public void getSearchInfo(String key) {
+		String desc;
+		desc = prevSearches.get(key).toString();
+		
+		view.updateSearchInfo(desc);
+	}
+	
 	public void initGraphFromFile(String fname){
 		inputGraph = new InputGraph(fname);
+		currGeneration = null;
+		theFittest = null;
+		prevSearches  = new HashMap<String, Individual>();
 		
+		view.clearList();
 		view.drawInputGraph();
 	}
 	
 	public void generateRandomGraph(int size){
 		inputGraph = new InputGraph(size);
+		currGeneration = null;
+		theFittest = null;
+		prevSearches  = new HashMap<String, Individual>();
 		
+		view.clearList();
+		view.drawInputGraph();
+	}
+	
+	public void initGraph(int matrix[][]){
+		inputGraph = new InputGraph(matrix);
+		currGeneration = null;
+		theFittest = null;
+		prevSearches  = new HashMap<String, Individual>();
+		
+		view.clearList();
 		view.drawInputGraph();
 	}
 	

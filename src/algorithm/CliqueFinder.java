@@ -70,6 +70,8 @@ public class CliqueFinder {
 		}
 		
 		showIndividual(theFittest, "The fittest");
+		
+		cm.addSearchResult(theFittest);
 		return currGeneration;
 	}
 

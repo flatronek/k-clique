@@ -107,6 +107,20 @@ public class Individual implements Comparable<Individual> {
 
 		fitness = indEdges / cliqueEdges;
 	}
+	
+	@Override
+	public String toString() {
+		String result;
+		result = new String("Individual has fitness: " + fitness + "\n" + 
+				"Vertices: ");
+		
+		for (Vertex v: vertices){
+			result = result.concat(v.getIndex() + ", ");
+		}
+		
+		result = result.concat(new String("\n"));
+		return result;
+	}
 
 	@Override
 	public int compareTo(Individual arg0) {
