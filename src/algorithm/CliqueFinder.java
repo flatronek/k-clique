@@ -161,7 +161,7 @@ public class CliqueFinder {
 			tournamentGroup.add(population.get(i));
 		}
 		
-		tournamentGroup.sort(null);
+		Collections.sort(tournamentGroup);
 		
 		parents.add(tournamentGroup.get(2));
 		parents.add(tournamentGroup.get(3));
@@ -231,7 +231,7 @@ public class CliqueFinder {
 		
 		for (Individual ind: indList){		
 			vertices = new LinkedList<Vertex>(ind.getVertices());
-			vertices.sort(null);
+			Collections.sort(vertices);
 			
 			previous = -1;
 			for (Vertex v: vertices){
@@ -265,7 +265,7 @@ public class CliqueFinder {
 		LinkedList<Individual> temp;
 		
 		temp = new LinkedList<Individual>(list);
-		temp.sort(null);
+		Collections.sort(temp);
 		
 		return temp.getLast();
 	}
@@ -320,7 +320,7 @@ public class CliqueFinder {
 	}
 	
 	public void showFitness(LinkedList<Individual> population, String text){
-		population.sort(null);
+		Collections.sort(population);
 
 		for (Individual ind: population){
 			System.out.println("\n\n"+text+" has fitness: " + ind.getFitness() +
