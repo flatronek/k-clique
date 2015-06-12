@@ -85,6 +85,11 @@ public class Individual implements Comparable<Individual> {
 		return fitness;
 	}
 
+	/**
+	 * Sets a list of vertices that each vertex in the individual is connected to.
+	 * Ignores the vertices that are not a part of this individual.
+	 * @param graph input graph.
+	 */
 	public void updateEdges(InputGraph graph) {
 		int adjMatrix[][] = graph.getAdjMatrix();
 		LinkedList<Edge> edges;
@@ -108,6 +113,10 @@ public class Individual implements Comparable<Individual> {
 		fitness = indEdges / cliqueEdges;
 	}
 	
+	/**
+	 * Parses information about this individual to String.
+	 * Contains information about fitness and vertices included.
+	 */
 	@Override
 	public String toString() {
 		String result;

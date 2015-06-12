@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.Random;
 
 import controller.CliqueManager;
+import exceptions.ParametersException;
+import exceptions.UninitializedGraphException;
 import graph.*;
 
 public class CliqueFinder {
@@ -39,10 +41,38 @@ public class CliqueFinder {
 		this.delayTime = 500;
 	}
 	
-	public synchronized LinkedList<Individual> findClique(InputGraph graph, int populationSize, int cliqueSize, int maxItCount, String selectionMode){
+	/**
+	 * Searches for a clique in a given graph. Iterates @see{maxItSize} time, generating following populations. 
+	 * Searching process comprises parents' selection and crossing-over. Two selection types are available:
+	 * roulette and tournament, what can be modyfied by a @see{selectionMode} param. If a child is generated
+	 * with a duplicated gene, whole selection and crossing-over process is repeated.
+	 * In case a clique is found mid-search, the function returns. 
+	 * Otherwise, the last generation is returned, and the fittest subgraph is passed to @see{CliqueManager} class.
+	 * Anytime a new individual with the highest fitness is selected it is passed into @see{CliqueManager} class,
+	 * so that the search process can be simulated.
+	 * Parameters conditions: population size >= 4, clique size >= 1 and less than graph size, iteration counter >= 1.
+	 * @param graph input graph represented by an adjacency matrix.
+	 * @param populationSize size of each generated population.
+	 * @param cliqueSize size of a clique to be found.
+	 * @param maxItCount maximum number of iterations in the search process.
+	 * @param selectionMode string "roulette" or "tournament", both can be staticly accessed in CliqueFinder class.
+	 * @return A list of individual: current generation when the searching ends, either finding a clique or reaching the max iteration count.
+	 * @throws UninitializedGraphException if given graph is null.
+	 * @throws ParametersException if any parameter condition is not met the exception is thrown.
+	 */
+	public synchronized LinkedList<Individual> findClique(InputGraph graph,
+			int populationSize, int cliqueSize, int maxItCount, String selectionMode) throws UninitializedGraphException, ParametersException {
+		
 		LinkedList<Individual> currGeneration;
 		Individual theFittest, tmp;
 		String mode;
+		
+		if (graph == null)
+			throw new UninitializedGraphException();
+		
+		if ((populationSize < 4) || (cliqueSize < 1) || (cliqueSize > graph.getAdjMatrix().length) ||
+				(maxItCount < 1))
+			throw new ParametersException();
 		
 		mode = new String(selectionMode);
 		
@@ -75,7 +105,14 @@ public class CliqueFinder {
 		return currGeneration;
 	}
 
-
+	/**
+	 * Finds initial population in the search process. Population consists of @see{populationSize} subgraphs that have @see{cliqueSize} size.
+	 * Each vertex has exactly the same probability of being selected.
+	 * @param graph input graph.
+	 * @param populationSize size of population that is to be found.
+	 * @param cliqueSize size of each single individual.
+	 * @return A list of found individuals.
+	 */
 	public LinkedList<Individual> findInitialPopulation(InputGraph graph, int populationSize, int cliqueSize){
 		LinkedList<Individual> population = new LinkedList<Individual>();
 		
@@ -94,6 +131,14 @@ public class CliqueFinder {
 		return population;
 	}
 	
+	/**
+	 * Generates next generation based on @see{currGeneration} using the specified selection mode.
+	 * Algorithm uses singlepoint-crossover method with two children.
+	 * @param currGeneration population that the parents will be selected from.
+	 * @param graph input graph.
+	 * @param selectionMode string "roulette" or "tournament", both can be staticly accessed in CliqueFinder class.
+	 * @return created generation: a list with individuals.
+	 */
 	public LinkedList<Individual> nextGeneration(LinkedList<Individual> currGeneration, InputGraph graph, String selectionMode){
 		LinkedList<Individual> nextGeneration, parents, offspring;
 		int populationSize;
@@ -123,6 +168,12 @@ public class CliqueFinder {
 		return nextGeneration;
 	}
 	
+	/**
+	 * Selects two parents that will be used to in the crossing-over process.
+	 * Individual has the higher chance of being selected the higher his' fitness is.
+	 * @param population population that the parents are being selected from.
+	 * @return a list with two parents.
+	 */
 	public LinkedList<Individual> rouletteSelection(LinkedList<Individual> population){
 		LinkedList<Individual> parents = new LinkedList<Individual>();
 		
@@ -151,6 +202,12 @@ public class CliqueFinder {
 		return parents;
 	}
 	
+	/**
+	 * Selects two parents that will be used to in the crossing-over process.
+	 * Population is divided into groups of four, and then two individuals with the highest fitness are selected.
+	 * @param population population that the parents are being selected from.
+	 * @return a list with two parents.
+	 */
 	public LinkedList<Individual> tournamentSelection(LinkedList<Individual> population){
 		LinkedList<Individual> parents = new LinkedList<Individual>();
 		LinkedList<Individual> tournamentGroup = new LinkedList<Individual>();
@@ -169,6 +226,16 @@ public class CliqueFinder {
 		return parents;
 	}
 	
+	/**
+	 * Creates children from @see{parents}. 
+	 * Uses singlepoint crossover method with two children.
+	 * A random point is selected and then each gene from the first parent up to crossover point are passed to first child,
+	 * the rest genes are genes from the second parent starting from crossover point.
+	 * If @see{parents} contains more than two individuals only the first and the second are taken into account.
+	 * @param parents a list containing two parents.
+	 * @param graph input graph, used in the mutation process.
+	 * @return a list with two children.
+	 */
 	public LinkedList<Individual> singlepointCrossover(LinkedList<Individual> parents, InputGraph graph){
 		LinkedList<Individual> offspring;
 		Individual fChild, sChild;
@@ -208,6 +275,12 @@ public class CliqueFinder {
 		return offspring;
 	}
 	
+	/**
+	 * Mutates given individual.
+	 * Each vertex can be mutated separately, replacing him with any of the vertexes in the input graph.
+	 * @param ind individual to have genes mutated.
+	 * @param graph graph the vertex are being selected from.
+	 */
 	public void mutate(Individual ind, InputGraph graph){
 		LinkedList<Vertex> vertices = ind.getVertices();
 		int [][]adjMatrix = graph.getAdjMatrix();
@@ -331,10 +404,18 @@ public class CliqueFinder {
 		};
 	}
 	
+	/**
+	 * Specifies the delay time of the delay.
+	 * @param dTime
+	 */
 	public void setDelayTime(int dTime){
 		this.delayTime = dTime;
 	}
 	
+	/**
+	 * Defines whether there is a delay between each iteration in the search process.
+	 * @param delay true or false.
+	 */
 	public void setDelay(boolean delay){
 		this.hasDelay = delay;
 	}

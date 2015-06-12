@@ -7,6 +7,8 @@ import java.util.Map;
 
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.SparseGraph;
+import exceptions.ParametersException;
+import exceptions.UninitializedGraphException;
 import algorithm.CliqueFinder;
 import graph.*;
 import gui.MainWindow;
@@ -61,9 +63,14 @@ public class CliqueManager {
 
 			@Override
 			public void run() {
-				cf.findClique(inputGraph, populationSize, cliqueSize, maxItCount, parseSelectionMode(selectionMode));
+				try {
+					cf.findClique(inputGraph, populationSize, cliqueSize, maxItCount, parseSelectionMode(selectionMode));
+				} catch (UninitializedGraphException e) {
+					view.printExceptionInfo("Please initialize graph first.");
+				} catch (ParametersException e) {
+					view.printExceptionInfo("Please change search parameters.");;
+				}
 			}
-			
 		});
 		
 		searching.start();
@@ -325,5 +332,14 @@ public class CliqueManager {
 
 	public void setInputGraph(InputGraph inputGraph) {
 		this.inputGraph = inputGraph;
+	}
+
+	public void saveGraphToFile(String filename) {
+		System.out.println(filename);
+		
+		if (inputGraph == null)
+			return;
+					
+		inputGraph.saveToFile(filename + ".txt");
 	}
 }

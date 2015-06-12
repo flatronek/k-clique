@@ -2,6 +2,7 @@ package graph;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -169,5 +170,29 @@ public class InputGraph {
 				}
 		
 		return file;
+	}
+
+	public void saveToFile(String path) {
+		createFile(path);
+		PrintWriter fOut = null;
+		int size;
+		
+		try {
+			fOut = new PrintWriter(path);
+			size = adjMatrix.length;
+
+			for (int i = 0; i < size; i++) {
+				for (int j = 0; j < size; j++) {
+					System.out.print(adjMatrix[i][j]);
+					fOut.print(String.valueOf(adjMatrix[i][j]));
+				}
+				fOut.println("");
+			}
+			fOut.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 }

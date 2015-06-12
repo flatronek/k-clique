@@ -25,6 +25,7 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
@@ -39,6 +40,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.collections15.Transformer;
 
@@ -79,6 +81,7 @@ public class MainWindow extends JFrame {
 	// opcje paska menu
 	JMenu fileMenu;
 	JMenuItem openFile;
+	JMenuItem saveFile;
 	JMenuItem generateMatrix;
 	JMenuItem drawGraph;
 	
@@ -116,7 +119,6 @@ public class MainWindow extends JFrame {
 	JSlider delayTime;
 	
 	JSpinner inputSizeSpinner;
-	JButton generateInputMatrixButton;
 	
 	JButton findCliqueButton;
 	JButton stopButton;
@@ -152,6 +154,13 @@ public class MainWindow extends JFrame {
 		openFile.getAccessibleContext().setAccessibleDescription(
 				"Opens a text file with adjacency matrix.");
 		fileMenu.add(openFile);
+		
+		saveFile = new JMenuItem("Save graph");
+		saveFile.setAccelerator(KeyStroke.getKeyStroke(
+		        KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		saveFile.getAccessibleContext().setAccessibleDescription(
+				"Creates a text file with adjacency matrix.");
+		fileMenu.add(saveFile);
 		
 		generateMatrix = new JMenuItem("Generate matrix");
 		generateMatrix.setAccelerator(KeyStroke.getKeyStroke(
@@ -199,10 +208,6 @@ public class MainWindow extends JFrame {
 		// inicjalizacja komponentow panelu opcji
 		inputSizeSpinner = new JSpinner();
 		inputSizeSpinner.setPreferredSize(new Dimension(30, 30));
-		
-		generateInputMatrixButton = new JButton();
-		generateInputMatrixButton.setPreferredSize(new Dimension(100, 28));
-		generateInputMatrixButton.setText("Generate");
 
 		findCliqueButton = new JButton();
 		findCliqueButton.setPreferredSize(new Dimension(100, 28));
@@ -328,15 +333,8 @@ public class MainWindow extends JFrame {
 						.addComponent(graphPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
 						.addComponent(infoPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE, 1000)	
 				));
-		// dodawanie listenerow do przyciskow
-		generateInputMatrixButton.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				//generateInputMatrix((int) inputSizeSpinner.getValue());
-			}
-		});
 		
+		// dodawanie listenerow do przyciskow
 		findCliqueButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -369,6 +367,14 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
+		saveFile.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				saveFileAction();
+			}
+		});
+		
 		drawGraph.addActionListener(new ActionListener() {
 
 			@Override
@@ -377,6 +383,10 @@ public class MainWindow extends JFrame {
 			}
 		});
 	}
+	
+	public void printExceptionInfo(String info) {
+		JOptionPane.showMessageDialog(getContentPane(), info, "Error", 0);
+	}
 	// otwieramy nowe okno do rysowania grafu w jungu
 	protected void drawGraphAction() {
 		graphEditor = new GraphEditor(cm);
@@ -384,6 +394,7 @@ public class MainWindow extends JFrame {
 	// otwieramy nowe okno do wybierania pliku z ktorego chcemy wczytac macierz sasiedztwa
 	protected void openFileAction() {
 		JFileChooser fBrowser = new JFileChooser();
+		fBrowser.setFileFilter(new FileNameExtensionFilter("Text files", "txt", "text"));
 		fBrowser.setDialogTitle("Open");
         fBrowser.showOpenDialog(null);
         
@@ -395,6 +406,22 @@ public class MainWindow extends JFrame {
         	
         }
 		
+	}
+	
+	protected void saveFileAction() {
+		JFileChooser fBrowser = new JFileChooser();
+		fBrowser.setFileFilter(new FileNameExtensionFilter("Text files", "txt", "text"));
+		fBrowser.setApproveButtonText("Save");
+		fBrowser.setDialogTitle("Save");
+        fBrowser.showOpenDialog(null);
+        
+        try{
+        	File f = fBrowser.getSelectedFile();
+        	String filename = f.getAbsolutePath();
+        	cm.saveGraphToFile(filename);
+        } catch (NullPointerException e){
+        	
+        }
 	}
 	// reset, resetuje sie lista przeszukiwan, graf jest rysowany od nowa itp.
 	protected void resetAction() {
